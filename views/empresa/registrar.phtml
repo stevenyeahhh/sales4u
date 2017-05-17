@@ -1,0 +1,605 @@
+<style>
+    .ni-3{
+        display: none;
+    }
+    .embed-container {
+        position: relative;
+        padding-bottom: 56.25%;
+        height: 0;
+        overflow: hidden;
+    }
+    .embed-container iframe {
+        position: absolute;
+        top:0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+    .ni-1{
+        display: block;
+    }
+
+    div#users-contain { width: 350px; margin: 20px 0; }
+    div#users-contain table { margin: 1em 0; border-collapse: collapse; width: 100%; }
+    div#users-contain table td, div#users-contain table th { border: 1px solid #eee; padding: .6em 10px; text-align: left; }
+    .ui-dialog .ui-state-error { padding: .3em; }
+    .validateTips { border: 1px solid transparent; padding: 0.3em; }
+</style>
+<script>
+
+    $(document).ready(function() {
+
+        getCities = function(ele, val) {
+//            $(ele).on("change", function() {
+            cityElement = "#ciudad";
+            if (ele == 'pais_contacto') {
+                cityElement = "#ciudad_contacto_tmp";
+            }
+            $(ele + " option").remove();
+            pais = val
+            if (pais != "") {
+                $.ajax({
+                    url: BASE + "utilities/getCiudades/" + pais,
+                    success: function(s) {
+                        $.each(JSON.parse(s), function(i, item) {
+                            $(cityElement).append("<option value='" + item.id_ciudad + "'>" + item.ciudad + "</option>")
+                        });
+                    },
+                    error: function(e) {
+                        console.error(e)
+                    }
+                })
+            }
+//            })
+        }
+
+
+        nombre = $("#nombre_tmp")
+        apellido = $("#apellido_tmp")
+        documento = $("#documento_tmp")
+        email = $("#email_tmp")
+        celular = $("#celular_temp")
+        titulo = $("#titulo_tmp")
+        pais_contacto = $("#pais_contacto")
+        ciudad_contacto = $("#ciudad_contacto_tmp")
+        asesor = $("#asesor_tmp")
+        tipo_documento = $("#tipo_documento_tmp")
+
+        noContacts = $("#dialog-form2").dialog({
+            autoOpen: false,
+            height: 610,
+            width: 500,
+            modal: true,
+            position: {my: "center", at: "top"},
+            buttons: {
+                "Aceptar": function() {
+                    console.log("fg2");
+//                    return;
+                    $("form").submit();
+                },
+                "Cancelar": function() {
+                    console.log("fg3");
+                    noContacts.dialog("close");
+//                    event.preventDefault();
+
+                }
+
+            }, close: function() {
+                console.log("fg4");
+                noContacts.dialog("close");
+//                event.preventDefault();
+                $("#dialog-form input").removeClass("ui-state-error");
+            }
+        });
+        $("#btnSubmit").on("click", function() {
+            //event.preventDefault();
+            if ($("[name=lat]").val() == "") {
+                $("#ubicacion-error").show();
+//                return false;
+            } else {
+                $("#ubicacion-error").hide();
+                if ($("form").valid()) {
+//                    alert("hola2")
+                    if ($("#contactos tr").length === 0)
+                        noContacts.dialog("open");
+                    else
+                        $("form").submit();
+                }
+            }
+
+        })
+
+
+        dialog = $("#dialog-form").dialog({
+            autoOpen: false,
+            height: 450,
+            width: 500,
+            modal: true,
+            position: {my: "center", at: "top"},
+            buttons: {
+                "Crear": function() {
+//                    correcto = true;
+//                    $("#dialog-form input").removeClass("ui-state-error");
+//                    for (i = 0; i < $("#dialog-form input").length; i++) {
+//                        if (!$("#dialog-form input")[i].checkValidity()) {
+//                            correcto = false;
+//                            $($("#dialog-form input")[i]).addClass("ui-state-error");
+//                            break;
+//                        }
+//
+//                    }
+//                    if (!correcto) {
+                    if (titulo.val() == "" || nombre.val() == "" || apellido.val() == "" || tipo_documento.val() == "" || documento.val() == "" || email.val() == "" || celular.val() == "" || pais_contacto.val() == "" || ciudad_contacto.val() == "") {
+                        setTimedMessage("alert-danger", "Debe diligenciar bien los datos");
+                    } else {
+                        $("#contactos").append("<tr><td>" +
+                                '<a href="" class="quitar-contacto"><span class="glyphicon glyphicon-minus"></span>&nbsp;</a>' +
+                                "</td><td><input type='hidden' name='titulo[]' value='" + titulo.val() + "'/>" + $("option:selected", titulo).text() + "</td>" +
+                                "</td><td><input type='hidden' name='nombre[]' value='" + nombre.val() + "'/>" + nombre.val() +
+                                "</td><td><input type='hidden' name='apellido[]' value='" + apellido.val() + "'/>" + apellido.val() +
+                                "</td><td><input type='hidden' name='tipo_documento[]' value='" + tipo_documento.val() + "'/>" + $("option:selected", tipo_documento).text() +
+                                "</td><td><input type='hidden' name='documento[]' value='" + documento.val() + "'/>" + documento.val() +
+                                "</td><td><input type='hidden' name='email[]' value='" + email.val() + "'/>" + email.val() +
+                                "</td><td><input type='hidden' name='celular[]' value='" + celular.val() + "'/>" + celular.val() +
+                                "</td><td><input type='hidden' name='pais_contacto[]' value='" + pais_contacto.val() + "'/>" + $("option:selected", pais_contacto).text() +
+                                "</td><td><input type='hidden' name='ciudad_contacto[]' value='" + ciudad_contacto.val() + "'/>" + $("option:selected", ciudad_contacto).text() +
+                                "</td><td><input type='hidden' name='asesor[]' value='" + asesor.val() + "'/>" + $("option:selected", asesor).text() + "</tr>");
+
+                        dialog.dialog("close");
+
+                    }
+
+//                    } else {
+
+
+//                    }
+
+                },
+                Cancelar: function() {
+                    dialog.dialog("close");
+                }
+            },
+            close: function() {
+                $("#dialog-form input").removeClass("ui-state-error");
+            }
+        });
+
+        $("#asociar-contacto").on("click", function(ev) {
+            ev.preventDefault();
+            dialog.dialog("open");
+
+        })
+        $(document).on("click", ".quitar-contacto", function(ev) {
+//            alert("Hola")
+//            ev.preventDefault();
+//            $(this).parent().parent().remove()
+
+        })
+
+    })
+//    var app = angular.module('myApp', []);
+    app.controller('myCtrl2', function($rootScope, $http) {
+        $rootScope.contactos = []
+        $rootScope.quitar=function(val){
+//            console.info(val)
+            $rootScope.contactos.splice(val, 1);
+        }
+//        alert($rootScope.nitipo_empresa);
+        $rootScope.chnitipo_empresa = function() {
+            console.log($rootScope.nitipo_empresa.id_tipo_empresa)
+            console.log($rootScope.nitipo_empresa.fecha_registro)
+            $(".ni-3").hide();
+            $(".ni-" + $rootScope.nitipo_empresa.id_tipo_empresa).show();
+
+        };
+        $rootScope.chpais = function(msg, $event) {
+            var data;
+            $("#ciudad option").remove()
+            $http({
+                method: 'GET',
+                url: BASE + "utilities/getCiudades/" + $rootScope.pais.id_pais,
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+            }).then(function(response) {
+                console.log(response.data)
+                $.each(response.data, function(i, item) {
+                    $("#ciudad").append("<option value='" + item.id_ciudad + "'>" + item.ciudad + "</option>")
+                });
+
+            }, function(response) {
+                alert("Error")
+            })
+            $rootScope.ngciudad = data;
+        }
+        $rootScope.chpais_contacto = function(msg, $event) {
+            var data;
+            alert(event.target.value)
+            $("#ciudad_contacto_tmp option").remove()
+            $http({
+                method: 'GET',
+                url: BASE + "utilities/getCiudades/" + event.target.value,
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+            }).then(function(response) {
+                console.log(response.data)
+                $.each(response.data, function(i, item) {
+                    $("#ciudad_contacto_tmp").append("<option value='" + item.id_ciudad + "'>" + item.ciudad + "</option>")
+                });
+
+            }, function(response) {
+                alert("Error")
+            })
+//            $rootScope.ngciudad = data;
+        }
+    });
+
+    ///////////////////////
+    app.controller('buttonCtrl', ['$scope', 'dialogService',
+        function($scope, dialogService) {
+
+            $scope.openClick = function() {
+
+                // The data for the dialog
+                var model = {
+                    firstName: "Jason",
+                    lastName: "Stadler"
+                };
+
+                // jQuery UI dialog options
+                var options = {
+                    autoOpen: false,
+                    modal: true,
+                    width: 500,
+                    close: function(event, ui) {
+                        console.log("Predefined close");
+                    }
+                };
+
+                // Open the dialog
+                dialogService.open("myDialog", "dialogTemplate.html", model, options)
+                        .then(
+                                function(result) {
+                                    console.log("Close");
+                                    console.log(result);
+                                },
+                                function(error) {
+                                    console.log("Cancelled");
+                                }
+                        );
+
+            };
+        }
+    ])
+
+    app.controller('dialogCtrl', ['$scope', 'dialogService',
+        function($scope, dialogService) {
+            $scope.item = {};
+            $scope.testObj = function($item) {
+                $scope.item = $item;
+//                console.log($item)
+//                console.log($item.disponible)
+            };
+            // $scope.model contains the object passed to open in config.model
+
+            $scope.saveClick = function() {
+                console.log($scope.titulo_tmp);
+                console.log($scope.nombre_tmp);
+                console.log($scope.apellido_tmp);
+                console.log($scope.tipo_documento_tmp);
+                console.log($scope.documento_tmp);
+                console.log($scope.email_tmp);
+                console.log($scope.celular_temp);
+                console.log($scope.pais_contacto);
+                console.log($scope.ciudad_contacto_tmp);
+                console.log($scope.asesor_tmp);
+                $scope.contactos.push({titulo_tmp: $scope.titulo_tmp,
+                    nombre_tmp: $scope.nombre_tmp,
+                    apellido_tmp: $scope.apellido_tmp,
+                    tipo_documento_tmp: $scope.tipo_documento_tmp,
+                    documento_tmp: $scope.documento_tmp,
+                    email_tmp: $scope.email_tmp,
+                    celular_temp: $scope.celular_temp,
+                    pais_contacto: $scope.pais_contacto,
+                    ciudad_contacto_tmp: $scope.ciudad_contacto_tmp,
+                    asesor_tmp: $scope.asesor_tmp})
+//                console.log($scope.item)
+//                console.log("----------")
+//                console.log($scope.item)
+//                $scope.items.push($scope.item)
+//                console.log($scope.items)
+//                console.log("----------")
+                dialogService.close("myDialog", $scope.model);
+            };
+
+            $scope.cancelClick = function() {
+                dialogService.cancel("myDialog");
+            };
+
+            $scope.confirmClick = function() {
+                // Open another dialog here
+                dialogService.open("myConfirm", "confirmTemplate.html")
+                        .then(
+                                function(result) {
+                                    console.log("Confirm");
+                                },
+                                function(error) {
+                                    console.log("Cancel");
+                                }
+                        );
+            };
+
+        }
+    ]);
+
+    app.controller('confirmCtrl', ['$scope', 'dialogService',
+        function($scope, dialogService) {
+
+            $scope.confirmClick = function() {
+                dialogService.close("myConfirm");
+            };
+
+            $scope.cancelClick = function() {
+                dialogService.cancel("myConfirm");
+            };
+
+        }
+    ]);
+
+    angular.module('dialogService', []).service('dialogService',
+            ['$rootScope', '$q', '$compile', '$templateCache',
+                function($rootScope, $q, $compile, $templateCache) {
+
+
+                    _this = this;
+                    this.dialogs = {};
+
+                    this.open = function(id, template, model, options) {
+
+                        // Check our required arguments
+                        if (!angular.isDefined(id)) {
+                            throw "dialogService requires id in call to open";
+                        }
+
+                        if (!angular.isDefined(template)) {
+                            throw "dialogService requires template in call to open";
+                        }
+
+                        // Set the defaults for model
+                        if (!angular.isDefined(model)) {
+                            model = null;
+                        }
+
+                        // Copy options so the change ot close isn't propogated back.
+                        // Extend is used instead of copy because window references are
+                        // often used in the options for positioning and they can't be deep
+                        // copied.
+                        var dialogOptions = {};
+                        if (angular.isDefined(options)) {
+                            angular.extend(dialogOptions, options);
+                        }
+
+                        // Initialize our dialog structure
+                        var dialog = {scope: null, ref: null, deferred: null};
+
+                        // Get the template and trim to make it valid
+                        var dialogTemplate = $templateCache.get(template);
+                        if (!angular.isDefined(dialogTemplate)) {
+                            throw "dialogService could not find template " + template;
+                        }
+                        dialogTemplate = dialogTemplate.trim();
+
+                        // Create a new scope, inherited from the parent.
+                        dialog.scope = $rootScope.$new();
+                        dialog.scope.model = model;
+                        var dialogLinker = $compile(dialogTemplate);
+                        dialog.ref = $(dialogLinker(dialog.scope));
+
+                        // Hande the case where the user provides a custom close and also
+                        // the case where the user clicks the X or ESC and doesn't call
+                        // close or cancel.
+                        var customCloseFn = dialogOptions.close;
+                        var cleanupFn = this.cleanup;
+                        dialogOptions.close = function(event, ui) {
+                            if (customCloseFn) {
+                                customCloseFn(event, ui);
+                            }
+                            cleanupFn(id);
+                        };
+
+                        // Initialize the dialog and open it
+                        dialog.ref.dialog(dialogOptions);
+                        dialog.ref.dialog("open");
+
+                        // Cache the dialog
+                        _this.dialogs[id] = dialog;
+
+                        // Create our promise, cache it to complete later, and return it
+                        dialog.deferred = $q.defer();
+                        return dialog.deferred.promise;
+                    };
+
+                    this.close = function(id, result) {
+                        // Get the dialog and throw exception if not found
+                        var dialog = _this.getExistingDialog(id);
+
+                        // Notify those waiting for the result
+                        // This occurs first because the close calls the close handler on the
+                        // dialog whose default action is to cancel.
+                        dialog.deferred.resolve(result);
+
+                        // Close the dialog (must be last)
+                        dialog.ref.dialog("close");
+                    };
+
+                    this.cancel = function(id) {
+                        // Get the dialog and throw exception if not found
+                        var dialog = _this.getExistingDialog(id);
+
+                        // Notify those waiting for the result
+                        // This occurs first because the cancel calls the close handler on the
+                        // dialog whose default action is to cancel.
+                        dialog.deferred.reject();
+
+                        // Cancel and close the dialog (must be last)
+                        dialog.ref.dialog("close");
+                    };
+
+                    /* private */
+                    this.cleanup = function(id) {
+                        // Get the dialog and throw exception if not found
+                        var dialog = _this.getExistingDialog(id);
+
+                        // This is only called from the close handler of the dialog
+                        // in case the x or escape are used to cancel the dialog. Don't
+                        // call this from close, cancel, or externally.
+                        dialog.deferred.reject();
+                        dialog.scope.$destroy();
+
+                        // Remove the object from the DOM
+                        dialog.ref.remove();
+
+                        // Delete the dialog from the cache
+                        delete _this.dialogs[id];
+                    };
+
+                    /* private */
+                    this.getExistingDialog = function(id) {
+                        // Get the dialog from the cache
+                        var dialog = _this.dialogs[id];
+                        // Throw an exception if the dialog is not found
+                        if (!angular.isDefined(dialog)) {
+                            throw "DialogService does not have a reference to dialog id " + id;
+                        }
+                        return dialog;
+                    };
+
+                }
+            ])
+
+
+
+</script>
+
+
+<form role="form" method="post" ng-app="myApp" ng-controller="myCtrl" >
+    
+    
+    <div ng-controller="myCtrl2">
+        <?php $this->createField("nitipo_empresa", "Tipo Empresa", "select"); ?>
+        <?php //  $this->createField("asesor", "Asociar Asesor", "select"); ?>
+        <?php $this->createField("nit_empresa", "Nit Empresa", "text"); ?>
+        <?php $this->createField("nombre", "Nombre Empresa", "text"); ?>
+        <?php $this->createField("telefono", "Teléfono", "text"); ?>
+        <?php $this->createField("fax", "Fax", "text"); ?>
+
+        <?php $this->createField("correo", "Correo", "email"); ?>
+        <?php $this->createField("direccion", "Dirección", "text"); ?>
+        <?php $this->createField("pais", "País", "select", false); ?>
+        <?php $this->createField("ciudad", "Ciudad", "select"); ?>
+
+        <table class="table table-hover" >
+            <thead>
+                <tr>
+                    <th colspan="5" class="text-center">Contacto</th>
+                </tr>
+                <tr>
+
+                    <th>
+            <div ng-controller="buttonCtrl">
+
+                <a href="" id="agregar-contactos" ng-click="openClick()"><span class="glyphicon glyphicon-plus"></span></a>
+            </div>
+            </th>
+            <th>Título</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Tipo documento</th>
+            <th>Documento</th>
+            <th>Correo</th>
+            <th>Celular</th>
+            <th>País</th>
+            <th>Ciudad</th>
+            <th>Asesor</th>
+            </tr>
+            </thead>
+            <tbody id="contactos" >
+
+                <tr ng-repeat="x in contactos">
+                    <td><a href="" class="quitar-contacto" ng-click='quitar($index)'><span class="glyphicon glyphicon-minus"></span>&nbsp;</a></td>
+                    <td><input type='hidden' name='titulo[]' value='{{x.titulo_tmp.id_titulo}}'/>{{x.titulo_tmp.titulo}}</td>
+                    <td><input type='hidden' name='nombre[]' value='{{x.nombre_tmp}}'/>{{x.nombre_tmp}}</td>
+                    <td><input type='hidden' name='apellido[]' value='{{x.apellido_tmp}}'/>{{x.apellido_tmp}}</td>
+                    <td><input type='hidden' name='tipo_documento[]' value='{{x.tipo_documento_tmp.id_tipo_documento}}'/>{{x.tipo_documento_tmp.tipo_documento}}</td>
+                    <td><input type='hidden' name='documento[]' value='{{x.documento_tmp}}'/>{{x.documento_tmp}}</td>
+                    <td><input type='hidden' name='email[]' value='{{x.email_tmp}}'/>{{x.email_tmp}}</td>
+                    <td><input type='hidden' name='celular[]' value='{{x.celular_temp}}'/>{{x.celular_temp}}</td>
+                    <td><input type='hidden' name='pais_contacto[]' value='{{x.pais_contacto.id_pais}}'/>{{x.pais_contacto.pais}}</td>
+                    <td><input type='hidden' name='ciudad_contacto[]' value='{{x.ciudad_contacto.id_ciudad}}'/>{{x.ciudad_contacto.ciudad}}</td>
+                    <td><input type='hidden' name='asesor[]' value='{{x.asesor_tmp.id_usuario}}'/>{{x.asesor_tmp.asesores}}</td>
+                </tr>
+            </tbody>
+        </table>
+        
+
+        <script type="text/ng-template" id="dialogTemplate.html" class='col-xs-12'>
+            <div ng-controller="dialogCtrl" >
+
+            <fieldset>
+            <?php $this->createField("titulo_tmp", "Título", "select"); ?>           
+            <?php $this->createField("nombre_tmp", "Nombre", "text"); ?>           
+            <?php $this->createField("apellido_tmp", "Apellido", "text"); ?>           
+            <?php $this->createField("tipo_documento_tmp", "Tipo Documento", "select"); ?>
+            <?php $this->createField("documento_tmp", "Documento", "number"); ?>           
+            <?php $this->createField("email_tmp", "Correo", "email"); ?>           
+            <?php $this->createField("celular_temp", "Celular", "number"); ?>           
+            <?php $this->createField("pais_contacto", "País", "select", false); ?>
+            <?php $this->createField("ciudad_contacto_tmp", "Ciudad", "select"); ?>           
+            <?php $this->createField("asesor_tmp", "Asociar Asesor", "select", false); ?>
+            <button ng-click="cancelClick()">Cancel</button>
+            <button ng-click="saveClick()">Save</button>
+            </fieldset>
+
+            </div>
+        </script>
+
+        <br/>
+        <br/>
+
+
+
+        <div class="ni-3 ni-2">
+            <?php $this->createField("margen_utilidad", "Margen Utilidad", "text"); ?>
+            <?php $this->createField("costo_transporte", "Costo Transporte", "text"); ?>       
+            <?php $this->createField("costo_administracion", "Costo Administración", "text"); ?>       
+            <?php $this->createField("factor_costo", "Factor Costo", "text"); ?>       
+            <?php $this->createField("comision", "Comisión", "text"); ?>       
+            <?php $this->createField("plus", "Plus", "text"); ?>       
+            <?php $this->createField("costo", "Costo", "text"); ?>
+        </div>
+        <div class="ni-3 ni-1">
+            <br/>
+
+
+            <input type="hidden" name="lat" value=""/>
+            <input type="hidden" name="lng" value=""/>
+            <!--<progress value="0" max='100' id="okposition" name="okposition"></progress>-->
+            <!--<input  type='progress' value="no" id="okposition" name="okposition" />-->
+            <!--<input  type='progress' value="no" id="okposition" name="okposition" />-->
+            <label for="Ubicación" >Ubicación:</label>
+            <!--<input type="checkbox" disabled='disabled' id="okposition" name="okposition" />-->
+            <div style='display: none' id="ubicacion-error" class="alert alert-warning" >Valor requerido</div>
+            <div class="embed-container ">
+                <iframe  width="560" height="315"  src="<?= BASE . 'utilities/' ?>map" frameborder="0" allowfullscreen>
+
+
+                </iframe>
+            </div>
+        </div>
+        <div id="dialog-form2" title="Alerta">
+            <fieldset>
+                Se detectó que no registró contactos.
+                ¿Desea continuar?
+            </fieldset>
+        </div>
+        <br/>
+        <input id="btnSubmit" type="button" value="Guardar"/>
+    </div>
+</form>

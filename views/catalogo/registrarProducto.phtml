@@ -1,0 +1,71 @@
+
+<script>
+    app.controller("myCtrl.image", function($scope, $http)
+    {
+        $scope.imageSource = "";
+        $scope.onselectfoto = function(msg, $event)
+        {
+            console.log(event.target)
+            var reader = new FileReader();
+            reader.onload = function(e)
+            {
+                $scope.$apply(function()
+                {
+                    $scope.imageSource = e.target.result;
+                });
+            }
+            reader.readAsDataURL(event.target.files[0]);
+        }
+    });
+    app.directive('onFileChange', function() {
+        return {
+            restrict: 'A',
+            link: function(scope, element, attrs) {
+                var onChangeHandler = scope.$eval(attrs.onFileChange);
+
+                element.bind('change', function() {
+                    scope.$apply(function() {
+                        var files = element[0].files;
+                        if (files) {
+                            onChangeHandler(files);
+                        }
+                    });
+                });
+
+            }
+        };
+    });
+</script>
+<form enctype="multipart/form-data" role="form" method="post" ng-app="myApp" ng-controller="myCtrl" ng-submit="ngSubmit()">
+        
+    
+    <?php if(!$this->params[empresa]){
+
+    $this->createField("empresas", "Empresa", "select");
+            
+    }else{?>
+    <p class="lead"><b>Empresa:</b> {{ngempresa.nit_empresa + " " + ngempresa.nombre}}</p>
+    <?php }?>
+    <?php $this->createField("nombre", "Nombre Producto", "text"); ?>
+    <?php $this->createField("descripcion", "Descripcion", "textarea"); ?>
+
+    <div ng-controller="myCtrl.image" >
+        <?php $this->createField("foto", "Imagen Producto", "file"); ?>
+        <div class="row form-group form-inline">
+            <label for="" class="col-xs-4">Imagen precargarda:</label> 
+
+            <img class="col-xs-8" width="300" ng-src="{{imageSource}}"></img>
+        </div>
+    </div>
+
+    <?php $this->createField("peso", "Peso (kg)", "number"); ?>
+    <?php $this->createField("volumen", "Volumen (cm <sup>3</sup>)", "number"); ?>
+    <?php $this->createField("referencia", "Referencia", "text"); ?>
+    <?php $this->createField("presentacion", "presentacion", "text"); ?>
+    <?php $this->createField("referencia_local", "Referencia Local", "text"); ?>
+    <?php $this->createField("tipos_moneda", "Tipo Moneda", "select"); ?>
+    <?php $this->createField("costo", "Costo (Respecto al tipo de moneda)", "number"); ?>
+    <?php $this->createField("iva", "Iva (Parametrizable) se suma (valorProducto- descuento)*Cantidad*Iva", "select"); ?>
+
+    <input class="btn btn-info" type="submit" value="Registrar"/> 
+</form>

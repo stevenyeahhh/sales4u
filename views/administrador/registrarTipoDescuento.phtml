@@ -1,0 +1,17 @@
+<form role="form" method="post" ng-app="myApp" ng-controller="myCtrl" ng-submit="ngSubmit()" >
+    <?php // var_dump($this->params);?>
+    <?php $this->createField("tipo_descuento", "Tipo Descuento", "text"); ?>
+    <input id="btnSubmit" type="submit" value="Guardar"/>
+    <br/>
+    <br/>
+    <br/>
+    <!--<a href="<?= BASE ?>administrador/registrarDescuento/tipo{{ngtipo_descuento.id_tipo_descuento}}">Registrar descuento</a>-->
+    
+    <?php $this->crearTabla($this->params[descuento], array(), "Descuentos",
+            array('urlConsultar' => "administrador/registrarDescuentos", 
+                'urlAjax' => "administrador/actualizarDescuentos",
+                'create' => 'administrador/registrarDescuento/tipo{{ngtipo_descuento.id_tipo_descuento}}'))
+             ?>
+    <?php // $this->crearTabla($this->params[descuento], array(), "Descuentos", "administrador/registrarDescuentos", "administrador/actualizarDescuentos") ?>
+</form>
+

@@ -1,0 +1,19 @@
+<?php
+  if(isset($this->msgBienvenida)){echo "<div style='float:right;position:absolute; bottom: 0;margin: 0 auto;color:rgba(8, 85, 140, 0.91)'><b>$this->msgBienvenida</b></div>";}
+?>
+<br/><br/>
+<?php
+if (isset($this->error)) {
+    echo "<div class='alert alert-danger'><strong>Error: </strong> $this->error</div>";
+}
+?>
+</div>
+</div>
+</div>
+<br/>
+<br/>
+<div style=" width: 100%;bottom:0px; position: fixed;text-align: center;   " class="panel-footer">
+    2017
+</div>
+</body>
+</html>

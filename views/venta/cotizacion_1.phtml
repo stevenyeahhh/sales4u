@@ -1,0 +1,316 @@
+<!--<script src="<?= BASE ?>libs/js/angucomplete-alt-master/angucomplete-alt.js"></script>-->
+
+<style>
+
+</style>
+<script>
+    var app = angular.module('dialogApp', ['dialogService', "angucomplete-alt"]);
+    app.controller('masterControl', function($rootScope, $http) {
+        $rootScope.items = []
+    })
+    app.controller('buttonCtrl', ['$scope', 'dialogService',
+        function($scope, dialogService) {
+            $scope.openClick = function() {
+
+                // The data for the dialog
+                var model = {
+                    firstName: "Jason",
+                    lastName: "Stadler"
+                };
+
+                // jQuery UI dialog options
+                var options = {
+                    autoOpen: false,
+                    modal: true,
+                    close: function(event, ui) {
+                        console.log("Predefined close");
+                    }
+                };
+
+                // Open the dialog
+                dialogService.open("myDialog", "dialogTemplate.html", model, options)
+                        .then(
+                                function(result) {
+                                    console.log("Close");
+                                    console.log(result);
+                                },
+                                function(error) {
+                                    console.log("Cancelled");
+                                }
+                        );
+
+            };
+        }
+    ]);
+
+    app.controller('dialogCtrl', ['$scope', 'dialogService',
+        function($scope, dialogService) {
+            $scope.item = {};
+            $scope.testObj = function($item) {
+                $scope.item = $item;
+//                console.log($item)
+//                console.log($item.disponible)
+            };
+            // $scope.model contains the object passed to open in config.model
+
+            $scope.saveClick = function() {
+                console.log("----------")
+                console.log($scope.item)
+                $scope.items.push($scope.item)
+                console.log($scope.items)
+                console.log("----------")
+                dialogService.close("myDialog", $scope.model);
+            };
+
+            $scope.cancelClick = function() {
+                dialogService.cancel("myDialog");
+            };
+
+            $scope.confirmClick = function() {
+                // Open another dialog here
+                dialogService.open("myConfirm", "confirmTemplate.html")
+                        .then(
+                                function(result) {
+                                    console.log("Confirm");
+                                },
+                                function(error) {
+                                    console.log("Cancel");
+                                }
+                        );
+            };
+
+        }
+    ]);
+
+    app.controller('confirmCtrl', ['$scope', 'dialogService',
+        function($scope, dialogService) {
+
+            $scope.confirmClick = function() {
+                dialogService.close("myConfirm");
+            };
+
+            $scope.cancelClick = function() {
+                dialogService.cancel("myConfirm");
+            };
+
+        }
+    ]);
+
+    angular.module('dialogService', []).service('dialogService',
+            ['$rootScope', '$q', '$compile', '$templateCache',
+                function($rootScope, $q, $compile, $templateCache) {
+
+
+                    _this = this;
+                    this.dialogs = {};
+
+                    this.open = function(id, template, model, options) {
+
+                        // Check our required arguments
+                        if (!angular.isDefined(id)) {
+                            throw "dialogService requires id in call to open";
+                        }
+
+                        if (!angular.isDefined(template)) {
+                            throw "dialogService requires template in call to open";
+                        }
+
+                        // Set the defaults for model
+                        if (!angular.isDefined(model)) {
+                            model = null;
+                        }
+
+                        // Copy options so the change ot close isn't propogated back.
+                        // Extend is used instead of copy because window references are
+                        // often used in the options for positioning and they can't be deep
+                        // copied.
+                        var dialogOptions = {};
+                        if (angular.isDefined(options)) {
+                            angular.extend(dialogOptions, options);
+                        }
+
+                        // Initialize our dialog structure
+                        var dialog = {scope: null, ref: null, deferred: null};
+
+                        // Get the template and trim to make it valid
+                        var dialogTemplate = $templateCache.get(template);
+                        if (!angular.isDefined(dialogTemplate)) {
+                            throw "dialogService could not find template " + template;
+                        }
+                        dialogTemplate = dialogTemplate.trim();
+
+                        // Create a new scope, inherited from the parent.
+                        dialog.scope = $rootScope.$new();
+                        dialog.scope.model = model;
+                        var dialogLinker = $compile(dialogTemplate);
+                        dialog.ref = $(dialogLinker(dialog.scope));
+
+                        // Hande the case where the user provides a custom close and also
+                        // the case where the user clicks the X or ESC and doesn't call
+                        // close or cancel.
+                        var customCloseFn = dialogOptions.close;
+                        var cleanupFn = this.cleanup;
+                        dialogOptions.close = function(event, ui) {
+                            if (customCloseFn) {
+                                customCloseFn(event, ui);
+                            }
+                            cleanupFn(id);
+                        };
+
+                        // Initialize the dialog and open it
+                        dialog.ref.dialog(dialogOptions);
+                        dialog.ref.dialog("open");
+
+                        // Cache the dialog
+                        _this.dialogs[id] = dialog;
+
+                        // Create our promise, cache it to complete later, and return it
+                        dialog.deferred = $q.defer();
+                        return dialog.deferred.promise;
+                    };
+
+                    this.close = function(id, result) {
+                        // Get the dialog and throw exception if not found
+                        var dialog = _this.getExistingDialog(id);
+
+                        // Notify those waiting for the result
+                        // This occurs first because the close calls the close handler on the
+                        // dialog whose default action is to cancel.
+                        dialog.deferred.resolve(result);
+
+                        // Close the dialog (must be last)
+                        dialog.ref.dialog("close");
+                    };
+
+                    this.cancel = function(id) {
+                        // Get the dialog and throw exception if not found
+                        var dialog = _this.getExistingDialog(id);
+
+                        // Notify those waiting for the result
+                        // This occurs first because the cancel calls the close handler on the
+                        // dialog whose default action is to cancel.
+                        dialog.deferred.reject();
+
+                        // Cancel and close the dialog (must be last)
+                        dialog.ref.dialog("close");
+                    };
+
+                    /* private */
+                    this.cleanup = function(id) {
+                        // Get the dialog and throw exception if not found
+                        var dialog = _this.getExistingDialog(id);
+
+                        // This is only called from the close handler of the dialog
+                        // in case the x or escape are used to cancel the dialog. Don't
+                        // call this from close, cancel, or externally.
+                        dialog.deferred.reject();
+                        dialog.scope.$destroy();
+
+                        // Remove the object from the DOM
+                        dialog.ref.remove();
+
+                        // Delete the dialog from the cache
+                        delete _this.dialogs[id];
+                    };
+
+                    /* private */
+                    this.getExistingDialog = function(id) {
+                        // Get the dialog from the cache
+                        var dialog = _this.dialogs[id];
+                        // Throw an exception if the dialog is not found
+                        if (!angular.isDefined(dialog)) {
+                            throw "DialogService does not have a reference to dialog id " + id;
+                        }
+                        return dialog;
+                    };
+
+                }
+            ]);
+
+
+
+</script>
+
+<form ng-app="dialogApp" ng-controller="masterControl" ng-submit="ngSubmit()">
+
+    <div ng-controller="buttonCtrl">
+        <button ng-click="openClick()">Test</button>
+    </div>
+
+    <script type="text/ng-template" id="dialogTemplate.html">
+        <div ng-controller="dialogCtrl">
+        {{item}}
+        Nombre:{{item.title}}<br/>
+        Cantidad:{{item.originalObject.cantidad}}<br/>
+        Disponible: {{item.originalObject.disponible}}<br/>
+        <img ng-src="{{item.image}}" width="400"/>
+        <angucomplete-alt id="members"
+        placeholder="Buscar productos"
+        pause="400"
+        selected-object="testObj"
+        remote-url="<?= BASE ?>catalogo/getProductoLocalRef/"
+        remote-url-error-callback='error'
+        template-url='<?= BASE ?>utilities/angucomplete_template'
+        title-field="nombre,referencia_local"
+        description-field='descripcion'
+
+        image-field="foto"
+        input-class="form-control form-control-small"/>
+        <button ng-click="cancelClick()">Cancel</button>
+        <button ng-click="saveClick()">Save</button>
+        <button ng-click="confirmClick()">Confirm</button>
+
+        </div>
+    </script>
+
+    <table class="table table-hover">
+        <tr>
+            <th>Referencia Local</th>
+            <th>Cantidad</th>
+            <th>Descripcion</th>
+            <th>Valores y descuentos</th>
+            <th>Valor total</th>
+        </tr>
+        <tr ng-repeat="x in items">
+            <td>{{ x.originalObject.referencia_local}}</td>
+            <td>{{ x.originalObject.cantidad}}</td>
+            <td>{{ x.originalObject.descripcion}}</td>
+            <td></td>
+            <td></td>
+        </tr>
+    </table>
+
+
+    <!--
+            This is the template for the main dialog that is displayed. It uses the
+            dialogCtrl controller in app.js.
+    -->
+<!--    <script type="text/ng-template" id="dialogTemplate.html">
+        <div ng-controller="dialogCtrl">
+
+        First Name<br>
+        <input type="text" ng-model="model.firstName" /><br>
+        Last Name<br>
+        <input type="text" ng-model="model.lastName" /><br>
+
+        <button ng-click="cancelClick()">Cancel</button>
+        <button ng-click="saveClick()">Save</button>
+        <button ng-click="confirmClick()">Confirm</button>
+        </div>
+    </script>-->
+
+
+
+    <!--
+            This is the template for the confirmation popup. It uses the confirmCtrl
+            controller in app.js.
+    -->
+    <script type="text/ng-template" id="confirmTemplate.html">
+        <div ng-controller="confirmCtrl">
+        Are you sure?
+        <button ng-click="confirmClick()">Yes</button>
+        <button ng-click="cancelClick()">No</button>
+        </div>
+    </script>
+
+</form>

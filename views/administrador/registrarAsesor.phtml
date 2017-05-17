@@ -1,0 +1,90 @@
+<script>
+    app.controller('myCtrl2', function($scope, $http) {
+//        alert($scope.nitipo_empresa);
+
+        $scope.imageSource = "";
+        $scope.onselectfirma = function(msg, $event)
+        {
+            console.log(event.target)
+            var reader = new FileReader();
+            reader.onload = function(e)
+            {
+                $scope.$apply(function()
+                {
+                    $scope.imageSource = e.target.result;
+                });
+            }
+            reader.readAsDataURL(event.target.files[0]);
+        }
+        
+        $scope.chpais = function(msg, $event) {
+            var data;
+            $("#ciudad option").remove()
+            $http({
+                method: 'GET',
+                url: BASE + "utilities/getCiudades/" + $scope.pais.id_pais,
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+            }).then(function(response) {
+                console.log(response.data)
+                $.each(response.data, function(i, item) {
+                    $("#ciudad").append("<option value='" + item.id_ciudad + "'>" + item.ciudad + "</option>")
+                });
+
+            }, function(response) {
+                alert("Error")
+            })
+            $scope.ngciudad = data;
+        }
+
+    });
+
+    app.directive('onFileChange', function() {
+        return {
+            restrict: 'A',
+            link: function(scope, element, attrs) {
+                var onChangeHandler = scope.$eval(attrs.onFileChange);
+
+                element.bind('change', function() {
+                    scope.$apply(function() {
+                        var files = element[0].files;
+                        if (files) {
+                            onChangeHandler(files);
+                        }
+                    });
+                });
+
+            }
+        };
+    });
+
+</script>
+
+
+<form enctype="multipart/form-data" role="form" method="post" ng-app="myApp" ng-controller="myCtrl" ng-submit="ngSubmit()" >
+    <div ng-controller ='myCtrl2'>
+        <?php $this->createField("titulo", "Título", "select"); ?>
+        <?php $this->createField("nombre", "Nombre", "text"); ?>
+        <?php $this->createField("apellido", "Apellido", "text"); ?>
+        <?php $this->createField("tipo_documento", "Tipo Documento", "select"); ?>
+        <?php $this->createField("documento", "Documento", "number"); ?>
+        <?php $this->createField("email", "Correo", "email"); ?>
+        <?php $this->createField("celular", "Celular", "number"); ?>
+        <?php $this->createField("codigo_vendedor", "Código Vendedor", "text"); ?>
+
+        <?php $this->createField("pais", "País", "select"); ?>          
+        <?php $this->createField("ciudad", "Ciudad", "select"); ?>          
+        <?php $this->createField("comision_asignada", "Comisión Asignada", "number"); ?>          
+
+        <!--<div ng-controller="myCtrl.image" >-->
+        <?php $this->createField("firma", "Firma", "file"); ?>
+        <!--<input ng-model="firma" on-file-change="onFilesSelected"  title="Firma" type="file" class="form-control col-xs-8 ng-pristine ng-valid ng-empty ng-touched valid" id="firma" name="firma" value="" aria-required="true" aria-invalid="false">-->
+        <div class="row form-group form-inline">
+            <label for="" class="col-xs-4">Imagen precargarda:</label> 
+
+            <img class="col-xs-8" width="300" ng-src="{{imageSource}}"></img>
+        </div>
+        <!--</div>-->
+
+    </div>
+    <input class="btn btn-info" type="submit" value="Registrar"/> 
+</form>

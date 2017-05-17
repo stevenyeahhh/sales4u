@@ -1,0 +1,8 @@
+
+
+<?php // $this->crearTabla($this->params[asesores],array(),"Usuarios","administrador/consultar","administrador/actualizar")?>
+<?php $this->crearTabla($this->params[asesores],array(),"Usuarios",
+        array('urlConsultar' => "administrador/consultar", 
+                'urlAjax' => "administrador/actualizar",
+            'create' => 'administrador/registrarAsesor')
+        )?>

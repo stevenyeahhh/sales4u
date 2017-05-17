@@ -1,0 +1,49 @@
+<script>
+    app.controller("myCtrl.cantidad", function($scope, $http)
+    {
+
+        $scope.disponible = function() {
+//            alert("hola")
+
+            var disp = 0;
+            var cant = 0;
+            for (i = 0; i<$scope.ngproducto.length; i++) {
+                console.log($scope.ngproducto[i])
+                console.info(i)
+                console.info($scope.ngproducto[i].cantidad)
+                cant += $scope.ngproducto[i].cantidad/1;
+                disp += $scope.ngproducto[i].disponibilidad/1;
+            }
+            return disp+" de "+cant;
+        };
+     
+
+    }
+
+    );
+
+</script>
+
+
+
+<form role="form" method="post" ng-app="myApp" ng-controller="myCtrl" ng-submit="ngSubmit()">
+
+
+    <div class="row">
+
+        <div class="col-xs-4" ng-controller="myCtrl.cantidad">
+            <p class="lead"><b>{{ngproducto[0].nombre}}</b> </p>
+            Disponible 
+            {{disponible()||0}}
+
+            <br/>
+            <br/>
+            <img width="300" ng-src="{{BASE + 'img/productImages/' + ngproducto[0].foto}}"></img>
+        </div>
+        <div class="col-xs-8">
+            <?php $this->createField("cantidad", "Agregar cantidad", "number"); ?>
+            <input class="btn btn-info" type="submit" value="Registrar"/> 
+        </div>
+    </div>
+    
+</form>

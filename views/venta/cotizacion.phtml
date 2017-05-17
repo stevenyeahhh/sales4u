@@ -1,0 +1,430 @@
+<!--<script src="<?= BASE ?>libs/js/angucomplete-alt-master/angucomplete-alt.js"></script>-->
+<script>
+    app.controller('control2', function($rootScope, $http) {
+        $rootScope.items = [];
+        $rootScope.quitar = function(id) {
+//            alert(id)
+            var index = -1;
+            var comArr = eval($rootScope.items);
+            console.log(comArr);
+            console.log(id);
+            for (var i = 0; i < comArr.length; i++) {
+                if (comArr[i].originalObject.id_producto === id) {
+                    index = i;
+                    break;
+                }
+            }
+            if (index === -1) {
+                alert("Something gone wrong");
+            }
+            $rootScope.items.splice(index, 1);
+        }
+
+    })
+    app.controller('buttonCtrl', ['$scope', 'dialogService',
+        function($scope, dialogService) {
+
+            $scope.openClick = function() {
+
+                // The data for the dialog
+                var model = {
+                    firstName: "Jason",
+                    lastName: "Stadler"
+                };
+
+                // jQuery UI dialog options
+                var options = {
+                    autoOpen: false,
+                    modal: true,
+                    width: 500,
+                    close: function(event, ui) {
+                        console.log("Predefined close");
+                    }
+                };
+
+                // Open the dialog
+                dialogService.open("myDialog", "dialogTemplate.html", model, options)
+                        .then(
+                                function(result) {
+                                    console.log("Close");
+                                    console.log(result);
+                                },
+                                function(error) {
+                                    console.log("Cancelled");
+                                }
+                        );
+
+            };
+        }
+    ])
+
+    app.controller('dialogCtrl', ['$scope', 'dialogService',
+        function($scope, dialogService) {
+            $scope.item = {};
+            $scope.testObj = function($item) {
+                $scope.item = $item;
+//                console.log($item)
+//                console.log($item.disponible)
+            };
+            // $scope.model contains the object passed to open in config.model
+
+            $scope.saveClick = function() {
+                console.log("----------")
+                console.log($scope.item)
+                $scope.items.push($scope.item)
+                console.log($scope.items)
+                console.log("----------")
+                dialogService.close("myDialog", $scope.model);
+            };
+
+            $scope.cancelClick = function() {
+                dialogService.cancel("myDialog");
+            };
+
+            $scope.confirmClick = function() {
+                // Open another dialog here
+                dialogService.open("myConfirm", "confirmTemplate.html")
+                        .then(
+                                function(result) {
+                                    console.log("Confirm");
+                                },
+                                function(error) {
+                                    console.log("Cancel");
+                                }
+                        );
+            };
+
+        }
+    ]);
+
+    app.controller('confirmCtrl', ['$scope', 'dialogService',
+        function($scope, dialogService) {
+
+            $scope.confirmClick = function() {
+                dialogService.close("myConfirm");
+            };
+
+            $scope.cancelClick = function() {
+                dialogService.cancel("myConfirm");
+            };
+
+        }
+    ]);
+
+    angular.module('dialogService', []).service('dialogService',
+            ['$rootScope', '$q', '$compile', '$templateCache',
+                function($rootScope, $q, $compile, $templateCache) {
+
+
+                    _this = this;
+                    this.dialogs = {};
+
+                    this.open = function(id, template, model, options) {
+
+                        // Check our required arguments
+                        if (!angular.isDefined(id)) {
+                            throw "dialogService requires id in call to open";
+                        }
+
+                        if (!angular.isDefined(template)) {
+                            throw "dialogService requires template in call to open";
+                        }
+
+                        // Set the defaults for model
+                        if (!angular.isDefined(model)) {
+                            model = null;
+                        }
+
+                        // Copy options so the change ot close isn't propogated back.
+                        // Extend is used instead of copy because window references are
+                        // often used in the options for positioning and they can't be deep
+                        // copied.
+                        var dialogOptions = {};
+                        if (angular.isDefined(options)) {
+                            angular.extend(dialogOptions, options);
+                        }
+
+                        // Initialize our dialog structure
+                        var dialog = {scope: null, ref: null, deferred: null};
+
+                        // Get the template and trim to make it valid
+                        var dialogTemplate = $templateCache.get(template);
+                        if (!angular.isDefined(dialogTemplate)) {
+                            throw "dialogService could not find template " + template;
+                        }
+                        dialogTemplate = dialogTemplate.trim();
+
+                        // Create a new scope, inherited from the parent.
+                        dialog.scope = $rootScope.$new();
+                        dialog.scope.model = model;
+                        var dialogLinker = $compile(dialogTemplate);
+                        dialog.ref = $(dialogLinker(dialog.scope));
+
+                        // Hande the case where the user provides a custom close and also
+                        // the case where the user clicks the X or ESC and doesn't call
+                        // close or cancel.
+                        var customCloseFn = dialogOptions.close;
+                        var cleanupFn = this.cleanup;
+                        dialogOptions.close = function(event, ui) {
+                            if (customCloseFn) {
+                                customCloseFn(event, ui);
+                            }
+                            cleanupFn(id);
+                        };
+
+                        // Initialize the dialog and open it
+                        dialog.ref.dialog(dialogOptions);
+                        dialog.ref.dialog("open");
+
+                        // Cache the dialog
+                        _this.dialogs[id] = dialog;
+
+                        // Create our promise, cache it to complete later, and return it
+                        dialog.deferred = $q.defer();
+                        return dialog.deferred.promise;
+                    };
+
+                    this.close = function(id, result) {
+                        // Get the dialog and throw exception if not found
+                        var dialog = _this.getExistingDialog(id);
+
+                        // Notify those waiting for the result
+                        // This occurs first because the close calls the close handler on the
+                        // dialog whose default action is to cancel.
+                        dialog.deferred.resolve(result);
+
+                        // Close the dialog (must be last)
+                        dialog.ref.dialog("close");
+                    };
+
+                    this.cancel = function(id) {
+                        // Get the dialog and throw exception if not found
+                        var dialog = _this.getExistingDialog(id);
+
+                        // Notify those waiting for the result
+                        // This occurs first because the cancel calls the close handler on the
+                        // dialog whose default action is to cancel.
+                        dialog.deferred.reject();
+
+                        // Cancel and close the dialog (must be last)
+                        dialog.ref.dialog("close");
+                    };
+
+                    /* private */
+                    this.cleanup = function(id) {
+                        // Get the dialog and throw exception if not found
+                        var dialog = _this.getExistingDialog(id);
+
+                        // This is only called from the close handler of the dialog
+                        // in case the x or escape are used to cancel the dialog. Don't
+                        // call this from close, cancel, or externally.
+                        dialog.deferred.reject();
+                        dialog.scope.$destroy();
+
+                        // Remove the object from the DOM
+                        dialog.ref.remove();
+
+                        // Delete the dialog from the cache
+                        delete _this.dialogs[id];
+                    };
+
+                    /* private */
+                    this.getExistingDialog = function(id) {
+                        // Get the dialog from the cache
+                        var dialog = _this.dialogs[id];
+                        // Throw an exception if the dialog is not found
+                        if (!angular.isDefined(dialog)) {
+                            throw "DialogService does not have a reference to dialog id " + id;
+                        }
+                        return dialog;
+                    };
+
+                }
+            ])
+
+
+</script>
+<style>
+    .angucomplete-image{
+        width: 100px;
+
+    }
+
+    .angucomplete-row *{
+        display: inline-block;
+    }
+    .angucomplete-image-holder{
+        /*display:inline-block;*/
+        width: 100px;
+    }
+    /*    .angucomplete-title{
+            display:inline-block;
+        }
+            .angucomplete-description{
+            display: inline-block;
+        }*/
+</style>
+
+<form role="form" method="post" ng-app="myApp" ng-controller="myCtrl" ng-submit="ngSubmit()">    
+    <div ng-controller="control2">
+
+        <div > 
+            <div class="row">
+                <?php
+                $today = getdate();
+                $meses = array('enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre');
+
+
+                echo "<div class='col-sm-8'>Bogotá, ", $today[mday] . " de " . $meses[mon] . " del " . $today[year] . "</div>";
+                ?>
+                <div class="col-sm-4" >Código cotización xxx-xx/<?= $today[year] ?> <b>VRS-1</b></div>
+
+            </div>
+
+
+
+            <p class="lead"> Señores <b>{{ngempresa.nombre}}</b> </p>
+
+            <?php $this->createField("contactos", "Atn.:<b>Título</b>", "select"); ?>
+
+
+            Estimado <b>{{contactos.titulo}}</b> <br/>
+            <a href="#"><b>{{contactos.celular}}</b><br/></a>
+            <a href="#">{{contactos.correo}}</a><BR/>
+            <b>{{contactos.ciudad + " " + contactos.pais}}</b>
+
+
+            <BR/>		
+
+
+            <br/>
+            <br/>
+            A continuación ponemos a su disposición nuestra oferta por los siguientes artículos:							
+            <br/>
+            <table class="table table-hover">
+                <tr>
+                <tr>
+                    <th>
+                <div ng-controller="buttonCtrl">
+
+                    <a href="" id="agregar-producto" ng-click="openClick()"><span class="glyphicon glyphicon-plus"></span>Ítem</a>
+                </div>
+
+
+                </th>
+                <th>Referencia Local</th>
+                <th>Cantidad</th>
+                <th>Descripcion</th>
+                <th>Valores y descuentos</th>
+                <th>Valor total</th>
+                </tr>
+                <tr ng-repeat="x in items">
+                    <td><a href="" class="quitar-producto" ng-click='quitar(x.originalObject.id_producto)'><span class="glyphicon glyphicon-minus"></span>&nbsp;</a></td>
+                    <td><input type='hidden' name='productos[]' value="{{ x.originalObject.id_producto}}"/>{{ x.originalObject.referencia_local}}</td>
+                    <td><input style="width:50px" ng-model="x.originalObject.cantidad" type="number" class="form-control" name='cantidad[]'></td>
+                    <td> <input ng-model="x.originalObject.nombre" class="form-control" id="productos" name="productos" title="Ingrese producto" readonly="">
+                        <textarea ng-model="x.originalObject.descripcion"readonly="" rows="4" name="descproducto" class="form-control"></textarea>
+                        <img ng-src="{{x.originalObject.foto}}" width="100">
+                    </td>
+                    <td>
+                        <div class="col-xs-12">
+                            <div class="col-xs-6">VL/ UNITARIO</div>
+                            <div class="col-xs-6"></div>
+                            <!--{{x.originalObject.costo}}-->
+                            <input style="width:80px" type="text" ng-model="x.originalObject.costo">
+                        </div><br>
+                        <div class="col-xs-6">DCTO</div>
+                        <br><div class="col-xs-6"></div>
+                        <input style="width:80px" type="number" readonly="" ng-model="x.originalObject.dcto"><br>
+                        <div class="col-xs-6">VALOR CON DCTO</div>
+                        <br><div class="col-xs-6"></div>
+                        <input style="width:80px" type="number" readonly="" ng-model="x.originalObject.valdcto">
+
+                    </td>
+                    <td>
+                        {{x.originalObject.costo * x.originalObject.cantidad}}
+                        <!--<input type="number" style="width:50px" readonly="" ng-model="x.originalObject.valtotal">-->
+
+                    </td>
+                </tr>
+            </table>
+
+
+
+
+
+
+
+
+            <?php $this->createField("formaPago", "FORMA DE PAGO", "select"); ?> 
+            <br/>
+            <br/>
+            <?php $this->createField("entrega", "ENTREGA", "select"); ?> 
+
+
+
+            <div class="form-group">
+                <label for="observacion">Observación:</label>
+                <textarea class="form-control" rows="4" id="observacion"></textarea>
+            </div>
+
+            <div class='form-inline'>
+                Esta oferta es valida por<?php
+                $this->createField("validez", "", "select", array(array("0" => "0", "1" => "15"), array("0" => "1", "1" => "30"),
+                    array("0" => "1", "1" => "45"),), false
+                );
+                ?> días<br/>
+                Solo se procesaran ordenes de compra que tengan nuestra confirmación de recibido y que vengan acompañadas de su respectivo anticipo. No se aceptan cambios ni cancelaciones de las mismas.						<br/>
+                Por favor incluir en su orden su NIT, dirección y teléfono de entrega, facturación e instalación y una persona de contacto.						<br/>
+                Todos los bienes suministrados por nuestra compañía permanecen como propiedad nuestra mientras no se realice el pago total de los mismos.						<br/>
+            </div>
+
+            <br/>
+            <br/>
+
+
+
+            <img ng-src='<?= BASE ?>img/adviserSignatures/{{ngvendedor.firma}}' width='100'/>
+            <br/>
+            <b><?= $_SESSION[nombre] . " " . $_SESSION[apellido] ?></b><br/>
+            <b>Vendedor</b><br/>
+            <a href=""><?= $_SESSION[correo] ?></a><br/>
+            <!--            <a href="">CORREO@EMPRESA.COM</a><br/>-->
+            <!--PBX: <a href="">XXXXXXXXXXXXX</a><br/>-->
+            Cel:<a href=""><?= $_SESSION[celular] ?></a><br/>
+
+
+
+            <script type="text/ng-template" id="dialogTemplate.html" class='col-xs-12'>
+                <div ng-controller="dialogCtrl" >
+
+                Nombre:{{item.title}}<br/>
+                Cantidad:{{item.originalObject.cantidad}}<br/>
+                Disponible: {{item.originalObject.disponible}}<br/>
+
+                <div style='width:350px;height:350px'>
+                <img ng-src="{{item.image}}" width="400"/>
+                </div>
+                <angucomplete-alt id="members"
+                placeholder="Buscar productos"
+                pause="400"
+                selected-object="testObj"
+                remote-url="<?= BASE ?>catalogo/getProductoLocalRef/"
+                remote-url-error-callback='error'
+                template-url='<?= BASE ?>utilities/angucomplete_template'
+                title-field="nombre,referencia_local"
+                description-field='descripcion'
+
+                image-field="foto"
+                input-class="form-control form-control-small"/>
+                <button ng-click="cancelClick()">Cancel</button>
+                <button ng-click="saveClick()">Save</button>
+                <button ng-click="confirmClick()">Confirm</button>
+
+                </div>
+            </script>
+
+            <button >Guardar</button>
+        </div>
+    </div>
+</form>

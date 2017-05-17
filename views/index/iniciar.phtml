@@ -1,0 +1,13 @@
+<form role="form" method="post">
+    <div class="form-group">
+        <?php $this->createField("usuario", "Usuario", "text"); ?>
+    </div>
+    <br/>
+    <div class="form-group">
+        <?php $this->createField("clave", "clave", "password"); ?>
+    </div>
+    <input type="hidden" name="session" value="<?=(new DateTime())->getTimestamp()?>">
+    <input class="btn btn-info" type="submit" value="Iniciar"/> 
+</form>
+<br/>
+<br/>

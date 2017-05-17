@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+        <title><?= $this->title == null ? APP_NAME : $this->title . " | " . APP_NAME; ?></title> 
+        <!--<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.7/angular.js"></script>-->    
+        <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular.js"></script>
+        <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.3/angular-animate.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.7/angular-route.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.7/angular-resource.js"></script>
+        <script src="<?= BASE ?>libs/js/angucomplete-alt-master/angucomplete-alt.js"></script>
+
+        <script src="http://angular-ui.github.io/bootstrap/ui-bootstrap-tpls-1.3.2.js"></script>
+
+
+        <link rel="icon" type="image/png" href="<?= BASE ?>/img/logo.png" />
+        <style>
+
+            .btnHerramientas{
+                width: 400px;
+            }
+            .mensaje{
+                display: none;
+                position: fixed;
+                right: 0;
+                z-index:100;
+                /*top:0;
+                left:0;
+                width: 100%;*/
+
+            }
+
+            @media (min-width: 768px) {
+                .sidebar-nav .navbar .navbar-collapse {
+                    padding: 0;
+                    max-height: none;
+                }
+                .sidebar-nav .navbar ul {
+                    float: none;
+                }
+                /*  .sidebar-nav .navbar ul:not {
+                    display: block;
+                  }*/
+                .sidebar-nav .navbar li {
+                    float: none;
+                    display: block;
+                }
+                .sidebar-nav .navbar li a {
+                    padding-top: 12px;
+                    padding-bottom: 12px;
+                }
+            }
+
+            /***/
+            * {
+                @include box-sizing(border-box);
+            }
+
+            $pad: 30px;
+
+            .grid {
+                background: white;
+                margin: 0 0 $pad 0;
+
+                &:after {
+                    /* Or @extend clearfix */
+                    content: "";
+                    display: table;
+                    clear: both;
+                }
+            }
+
+            [class*='cols-'] {
+                float: left;
+                padding-right: $pad;
+                .grid &:last-of-type {
+                    padding-right: 0;
+                }
+            }
+            .cols-2-3 {
+                width: 66.66%;
+            }
+            .cols-1-3 {
+                width: 33.33%;
+            }
+            .cols-1-2 {
+                width: 50%;
+            }
+            .cols-1-4 {
+                width: 25%;
+            }
+            .cols-1-8 {
+                width: 12.5%;
+            }
+
+            /* Opt-in outside padding */
+            .grid-pad {
+                padding: $pad 0 $pad $pad;
+                [class*='cols-']:last-of-type {
+                    padding-right: $pad;
+                }
+            }
+            .chart {
+                width: 100%; 
+                height: 600px;
+            }
+            .angucomplete-image{
+                width: 100px;
+
+            }
+
+            .angucomplete-image-holder{
+                display:inline-block;
+                width: 100px;
+            }
+            .angucomplete-title{
+                display:inline-block;
+            }
+            .angucomplete-description{
+                display: inline-block;
+            }
+        </style>
+        <link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+        <!--<link rel="stylesheet" href="../index/css/bootstrap.min.css">-->
+        <script>
+            var CONTROLLERPATH = "<?= $this->controllerPath ?>";
+            var BASE = "<?= BASE ?>";
+            var BASEJS = "<?= "http://$_SERVER[HTTP_HOST]/" ?>";
+        </script>
+        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+        <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+        <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.0/css/bootstrap-datepicker.css">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.6.0/js/bootstrap-datepicker.js"></script>
+        <script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/jquery.validate.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/jquery.validation/1.16.0/additional-methods.min.js"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-switch/3.3.2/css/bootstrap2/bootstrap-switch.min.css"/>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-switch/3.3.2/js/bootstrap-switch.min.js"></script>
+
+        <link rel="stylesheet" href="<?= BASE ?>css/nprogress.css"/>
+        <script type="text/javascript" src="<?= BASE ?>libs/js/nprogress.js"></script>
+
+        <script src='<?= BASE ?>libs/js/validateaddons.js'></script>
+
+        <?php
+        foreach ($this->jsScripts as $value) {
+            echo "<script src='$this->viewPath/" . "js/$view/$value.js'></script>";
+        }
+        ?>
+
+        <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+        <script type="text/javascript" src="<?= BASE ?>libs/js/graphs.js"></script> 
+        <script>
+            var app;
+            var controller;
+            (function() {
+                app = angular.module('myApp', [<?php if (isset($this->angularRequires)) {
+            for ($i = 0; $i < count($this->angularRequires); $i++) {
+                echo "'" . $this->angularRequires[$i] . "',";
+            }
+        } ?>]);
+                controller = app.controller("myCtrl", function($rootScope) {
+
+                    
+                    $rootScope.CONTROLLERPATH = CONTROLLERPATH;
+                    $rootScope.BASE = BASE;
+                    $rootScope.BASEJS = BASEJS;
+
+                    $rootScope.ngSubmit = function(msg, $event) {
+                        $(event.target).submit()
+
+                    }
+<?php
+if (isset($this->params)):
+    foreach ($this->params as $key => $value):
+        echo '$rootScope.ng' . $key . "=" . json_encode($value) . ";";
+    endforeach;
+
+endif;
+?>
+                });
+            })()
+        </script>
+
+<?php if (isset($this->validacion)): ?>
+            <script>
+
+                jQuery.extend(jQuery.validator.messages, {
+                    required: "Valor requerido",
+                    remote: "Please fix this field.",
+                    email: "El valor debe ser un correo",
+                    regexp: "El valor debe seguir el patrón",
+                    url: "Please enter a valid URL.",
+                    date: "Please enter a valid date.",
+                    dateISO: "Please enter a valid date (ISO).",
+                    number: "El valor ingresado debe ser número",
+                    digits: "Please enter only digits.",
+                    creditcard: "Please enter a valid credit card number.",
+                    equalTo: "Valor no valido",
+                    accept: "Please enter a value with a valid extension.",
+                    minlength: jQuery.validator.format("Debe ingresar mínimo {0} carácteres"),
+                    maxlength: jQuery.validator.format("Debe ingresar máximo {0} carácteres"),
+                    rangelength: jQuery.validator.format("Please enter a value between {0} and {1} characters long."),
+                    range: jQuery.validator.format("Please enter a value between {0} and {1}."),
+                    max: jQuery.validator.format("Debe ingresar un valor menor o igual a {0}"),
+                    min: jQuery.validator.format("Debe ingresar un valor mayor o igual a {0}"),
+                    depends: jQuery.validator.format("No puede registrar este campo")
+                });
+                $(document).ready(function() {
+                    $("form").validate({
+                        ignoreTitle: true,
+                        //                    ignore: "",
+                        //                    ignore: ":disabled",
+                        rules:
+    <?= $this->validacion ?>,
+                        //                    errorElement: 'div',
+                        errorClass: 'alert alert-warning',
+                        errorPlacement: function(error, element) {
+                            if (element.attr("type") == "radio") {
+                                error.insertBefore(element);
+                            } else {
+                                error.insertAfter(element);
+                            }
+                        }
+                        //                validClass: 'alert alert-success',
+
+                    })
+                })
+            </script>
+<?php endif; ?>
+
+        <!-- JPG - Captcha - Inicio -->
+        <script src='https://www.google.com/recaptcha/api.js'></script>
+        <!-- JPG - Captcha - Fin -->
+        <style>
+            .btn span.glyphicon {    			
+                opacity: 0;				
+            }
+            .btn.active span.glyphicon {				
+                opacity: 1;				
+            }
+        </style>
+    </head>
+    <body>
+
+
+        <br/>
+        <div class="container">
+            <div class="row">
+                <a href="<?= BASE ?>">
+                    <center>
+
+                        <img src='<?= BASE ?>img/image5.png'/>
+                    </center>
+                    <div class="col-sm-2">
+
+                </a>
+                <br/>
+                <br/>
+                <br/>
+
+
+<?php if ($this->barmenu) { ?>
+                    <div class="sidebar-nav">
+
+                        <div class="navbar navbar-default" role="navigation">
+                            <!-------->
+                            <div class="navbar-header">
+                                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".sidebar-navbar-collapse">
+                                    <span class="sr-only">Toggle navigation</span>
+                                    <span class="icon-bar"></span>
+                                    <span class="icon-bar"></span>
+                                    <span class="icon-bar"></span>
+                                </button>
+                                <span class="visible-xs navbar-brand">Menú </span>
+                            </div>
+                            <div class="navbar-collapse collapse sidebar-navbar-collapse">
+                                <!-------------------->
+                                <ul class="nav navbar-nav">
+                                    <?php for ($i = 0; $i < count($this->barmenu); $i++) { ?>	
+                                        <?php
+                                        $active = "";
+                                        if ("http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" === $this->barmenu[$i]["url"]) {
+                                            $active = " active ";
+                                        }
+//                                            echo "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]"."=".$this->barmenu[$i]["url"];
+//                                            echo "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]"===$this->barmenu[$i]["url"];
+                                        ?>
+                                        <li class="<?= $active ?>" ><a href="<?= $this->barmenu[$i]["url"] ?>"><?= $this->barmenu[$i]["descripcion"] ?></a></li>         		 
+    <?php } ?>
+                                </ul>
+                                <!---------------------------------------------->
+                            </div><!--/.nav-collapse -->
+                            <!---->
+                        </div>
+
+                    </div>
+<?php } ?>
+            </div>
+            <div class=" col-sm-10">
+                <!--                    <div
+                                        class="fb-like"
+                                        data-share="true"
+                                        data-width="450"
+                                        data-show-faces="true">
+                                    </div>-->
+
+<?php if ($this->barmenu2) { ?>
+                    <div class="">
+
+                        <div class="navbar navbar-inverse" role="navigation">
+                            <!-------->
+                            <div class="navbar-header">
+                                <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".sidebar-navbar-collapse">
+                                    <span class="sr-only">Toggle navigation</span>
+                                    <span class="icon-bar"></span>
+                                    <span class="icon-bar"></span>
+                                    <span class="icon-bar"></span>
+                                </button>
+                                <span class="visible-xs navbar-brand">Menú </span>
+                            </div>
+                            <div class="navbar-collapse collapse sidebar-navbar-collapse">
+                                <!-------------------->
+                                <ul class="nav navbar-nav">
+                                    <?php for ($i = 0; $i < count($this->barmenu2); $i++) { ?>
+                                        <?php
+                                        $active = "";
+                                        if ("http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]" === $this->barmenu2[$i]["url"]) {
+                                            $active = " active ";
+                                        }
+                                        ?>
+                                        <li  class="<?= $active ?>"><a href="<?= $this->barmenu2[$i]["url"] ?>"><?= $this->barmenu2[$i]["descripcion"] ?></a></li>         		 
+    <?php } ?>
+                                </ul>
+                                <!---------------------------------------------->
+                            </div><!--/.nav-collapse -->
+                            <!---->
+                        </div>
+
+                    </div>
+                <?php } ?>
+                <div class="timed-msg alert" style="display:none;right:10px;z-index: 102; position: fixed"></div>
+                <br/>
+<?= $this->title == null ? "" : "<h1>$this->title</h1>" ?>
+<?= $this->mensaje == null ? "" : "<div class='alert alert-info'>$this->mensaje</div>" ?>

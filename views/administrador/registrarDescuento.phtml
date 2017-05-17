@@ -1,0 +1,49 @@
+<script>
+
+    app.controller('myCtrl2', function($scope, $http) {
+//        alert($scope.nitipo_empresa);
+    $scope.checked=true;
+    $scope.test=function(){
+        console.log($scope.cliente)
+        
+        $scope.checked= !($scope.cliente || $scope.producto || $scope.categoria);
+//        if($scope.cliente || $scope.producto || $scope.categoria){
+//            $scope.checked=false
+//        }else{
+//            $scope.checked=true
+//        }
+    }
+    $scope.chcliente=function(msg, $event){
+        $scope.test()
+    };
+    $scope.chproducto=function(msg, $event){
+        $scope.test()
+    };
+    $scope.chcategoria=function(msg, $event){
+        $scope.test()
+    };
+    
+
+})
+
+
+</script>
+
+<form role="form" method="post" ng-app="myApp" ng-controller="myCtrl" ng-submit="ngSubmit()" >
+    <div ng-controller="myCtrl2">
+        
+        <br/>
+        <br/>
+        <br/>
+        <br/>
+        
+        <?php $this->createField("tipo_descuento", "Tipo Descuento", "select"); ?>
+        <?php $this->createField("cliente", "Cliente", "select", false); ?>
+        <?php $this->createField("producto", "Producto", "select", false); ?>
+        <?php $this->createField("categoria", "Categoría", "select", false); ?>
+        <?php $this->createField("porcentaje", "Porcentaje", "number"); ?>
+        <?php $this->createField("fecha_inicio", "Fecha inicio", "date"); ?>
+        <?php $this->createField("fecha_fin", "Fecha fin", "date"); ?>
+        <input id="btnSubmit" type="submit" value="Guardar" ng-disabled="checked"/>
+    </div>
+</form>

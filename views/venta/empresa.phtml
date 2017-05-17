@@ -1,0 +1,58 @@
+
+<script>
+    app.controller('control2', function($rootScope, $http) {
+        $rootScope.items = [];
+        $rootScope.item = {};
+        $rootScope.testObj = function($item) {
+            $rootScope.item = $item;
+            console.log($rootScope.item)
+
+        };
+
+    })
+
+
+
+</script>
+<style>
+    .angucomplete-image{
+        width: 100px;
+
+    }
+
+    .angucomplete-row *{
+        display: inline-block;
+    }
+    .angucomplete-image-holder{
+        /*display:inline-block;*/
+        width: 100px;
+    }
+    /*    .angucomplete-title{
+            display:inline-block;
+        }
+            .angucomplete-description{
+            display: inline-block;
+        }*/
+</style>
+
+    <form action="{{'<?=BASE?>Venta/crearCotizacion/'+item.originalObject.id_empresa}}" role="form" method="post" ng-submit="ngSubmit()" ng-app="myApp" ng-controller="myCtrl">    
+        <div ng-controller="control2">
+            
+            <input type="submit"/>
+            <angucomplete-alt id="members"
+                              placeholder="Buscar empresa"
+                              pause="400"
+                              selected-object="testObj"
+                              remote-url="<?= BASE ?>empresa/getEmpresasJSON/"
+                              remote-url-error-callback='error'
+                              template-url='<?= BASE ?>utilities/angucomplete_template'
+                              title-field="nombre"
+                              description-field='nit_empresa'
+
+                              input-class="form-control form-control-small"/>
+
+
+
+        </div>
+
+    </form>
